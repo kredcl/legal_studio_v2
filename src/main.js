@@ -107,51 +107,104 @@ if (!reduce) {
 }
 
 /* ======================================================================
-   2 y 8 · Tarjetas que entran girando desde los costados
+   2 y 8 · Tarjetas que se abren como una puerta desde los costados
    ====================================================================== */
 if (!reduce) {
   $$('[data-side]').forEach((el) => {
-    const dir = el.dataset.side === 'left' ? -1 : 1;
+    const left = el.dataset.side === 'left';
+    el.style.transformOrigin = left ? '0% 50%' : '100% 50%';
     frame.add(() => {
       const r = el.getBoundingClientRect();
       const H = vh();
       if (r.top > H * 1.3 || r.bottom < -H * 0.3) return;
-      const t = out3(clamp01((H * 1.05 - r.top) / (H * 0.7)));
-      el.style.transform = `translateX(${(1 - t) * dir * 60}vw) rotateY(${(1 - t) * dir * -70}deg) rotateZ(${(1 - t) * dir * 6}deg)`;
-      el.style.opacity = String(clamp01(t * 1.5));
+      // el giro empieza cuando la tarjeta asoma y termina cuando su borde superior llega al 20 % de la pantalla
+      // empieza cuando la tarjeta ya asoma (borde superior al 96 %) y termina con el borde al 22 %
+      const t = clamp01((H * 0.96 - r.top) / (H * 0.74));
+      const e = inOut(t) * 0.35 + (1 - Math.pow(1 - t, 2)) * 0.65;
+      const k = 1 - e;
+      const rot = (left ? 1 : -1) * 98 * k; // borde interior se aleja: la hoja gira hacia la pantalla
+      el.style.transform = `translateX(${(left ? -1 : 1) * 24 * k}vw) translateZ(${-80 * k}px) rotateY(${rot}deg)`;
+      el.style.opacity = String(clamp01(t * 3));
     });
   });
 }
 
 /* ======================================================================
-   3 · Cubo doble: dos prismas giran con el scroll, uno con leve retraso
+   3 · Cubo doble: dos cubos de 4 caras giran en sentidos opuestos.
+   Hay 6 estados y 4 caras: cada cara toma el contenido del estado que le toca
+   mientras está oculta detrás del cubo.
    ====================================================================== */
 const cubePin = $('[data-cube-pin]');
-const cubeA = $('[data-cube-a]');
-const cubeB = $('[data-cube-b]');
-const dots = $$('.cube-dots li');
+const MEDIA = [
+  { video: 'video/tribunales.mp4', poster: 'video/tribunales.jpg' },
+  { img: 'img/c-mazo-900.jpg' },
+  { img: 'img/c-torres-900.jpg' },
+  { img: 'img/c-vidrio-900.jpg' },
+  { img: 'img/c-sala-900.jpg' },
+  { img: 'img/c-edificio-blanco-900.jpg', red: true },
+];
 if (!reduce && cubePin) {
-  const STEPS = 5;
-  const angleFor = (p, lag) => {
+  const cards = $$('[data-cube-states] > *');
+  const STATES = cards.length; // 6
+  const cubes = [$('[data-cube-a]'), $('[data-cube-b]')].map((el, ci) => ({
+    el,
+    dir: +el.dataset.dir,
+    faces: $$('.face', el),
+    shown: [-1, -1, -1, -1],
+    render(face, state) {
+      if (ci === 0) {
+        const src = cards[state];
+        face.className = `face ${src.className}`;
+        face.innerHTML = src.innerHTML;
+        if (src.tagName === 'A') { face.onclick = () => lenis ? lenis.scrollTo('#contacto') : $('#contacto').scrollIntoView(); face.style.cursor = 'pointer'; }
+        else { face.onclick = null; face.style.cursor = ''; }
+      } else {
+        const m = MEDIA[state];
+        face.className = `face face-media${m.red ? ' face-red' : ''}`;
+        face.innerHTML = m.video
+          ? `<video src="${m.video}" poster="${m.poster}" muted loop playsinline autoplay preload="auto"></video>`
+          : `<img src="${m.img}" width="900" height="900" alt="">`;
+        const v = face.querySelector('video'); if (v) v.play().catch(() => {});
+      }
+    },
+  }));
+  // precarga
+  MEDIA.forEach((m) => { if (m.img) { const i = new Image(); i.src = m.img; } });
+  cubes.forEach((c) => c.faces.forEach((f, i) => {
+    f.style.transform = `rotateX(${-c.dir * i * 90}deg) translateZ(calc(var(--cs) / 2))`;
+  }));
+
+  const STEPS = STATES - 1;
+  const posFor = (p, lag) => {
     const x = p * STEPS;
     const i = Math.min(STEPS, Math.floor(x));
-    if (i >= STEPS) return STEPS * 60;
-    const f = x - i;
-    return (i + inOut(clamp01((f - 0.28 - lag) / 0.5))) * 60;
+    if (i >= STEPS) return STEPS;
+    return i + inOut(clamp01((x - i - 0.22 - lag) / 0.56));
   };
   let lastIdx = -1;
   frame.add(() => {
     const r = cubePin.getBoundingClientRect();
     if (r.bottom < -100 || r.top > vh() + 100) return;
     const p = clamp01(-r.top / Math.max(1, r.height - vh()));
-    const a = angleFor(p, 0);
-    const b = angleFor(p, 0.07);
-    cubeA.style.transform = `translateZ(calc(var(--r) * -1)) rotateX(${a}deg)`;
-    cubeB.style.transform = `translateZ(calc(var(--r) * -1)) rotateX(${b}deg)`;
-    const idx = Math.round(a / 60);
+    cubes.forEach((c, ci) => {
+      const pos = posFor(p, ci * 0.06);
+      c.el.style.transform = `translateZ(calc(var(--cs) / -2)) rotateX(${c.dir * pos * 90}deg)`;
+      c.faces.forEach((face, f) => {
+        // estado que corresponde a esta cara: el más cercano a la posición actual con el mismo resto módulo 4
+        let st = f + 4 * Math.round((pos - f) / 4);
+        if (st < 0) st += 4;
+        if (st > STATES - 1) st -= 4;
+        if (st !== c.shown[f]) { c.render(face, st); c.shown[f] = st; }
+        // sombra: la cara que se aleja se oscurece
+        const d = Math.min(1, Math.abs(pos - st));
+        face.style.setProperty('--shade', (d * 0.38).toFixed(3));
+      });
+    });
+    const idx = Math.round(posFor(p, 0));
     if (idx !== lastIdx) { dots.forEach((d, i) => d.classList.toggle('is-active', i === idx)); lastIdx = idx; }
   });
 }
+const dots = $$('.cube-dots li');
 
 /* ======================================================================
    4 · EQUIPO: la palabra crece desde la I hasta pintar la pantalla de blanco
@@ -251,12 +304,12 @@ if (!reduce && road) {
     if (r.bottom < -100 || r.top > vh() + 100) return;
     const p = pinProgress(road);
     const pos = p * (rows.length - 1);
-    const step = vh() * (isPhone() ? 0.16 : 0.12);
+    const step = vh() * (isPhone() ? 0.2 : 0.19);
     rows.forEach((li, i) => {
       const d = i - pos;
       const ad = Math.abs(d);
-      li.style.transform = `translateY(${d * step}px) rotateX(${-d * 26}deg) translateZ(${-ad * 70}px)`;
-      li.style.opacity = String(clamp01(1 - ad * 0.3));
+      li.style.transform = `translateY(${d * step}px) translateZ(${-ad * 90}px) rotateX(${-d * 32}deg)`;
+      li.style.opacity = String(clamp01(1 - ad * 0.38));
       li.classList.toggle('is-active', ad < 0.5);
     });
   });
