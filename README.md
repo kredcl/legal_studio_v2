@@ -37,6 +37,5 @@ npm run preview
 - **Fotos:** [Unsplash](https://unsplash.com) (licencia Unsplash). Retratos en blanco y negro de stock: reemplazarlos por los del equipo real.
 - **Videos:** [Mixkit](https://mixkit.co) (licencia gratuita de Mixkit), recortados a bucles de 9 s sin audio.
   - `reunion`: Lawyers discuss strategy in late night meeting (16104)
-  - `estrategia`: Lawyer explains to client with laptop in office (16106)
   - `firma`: Man signing off a contract and handshake (23115)
   - `tribunales`: Lawyer talks on phone outside courthouse (16107)
