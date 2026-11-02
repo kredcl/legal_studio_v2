@@ -1,0 +1,8 @@
+# Commits de origen de las skills (instaladas el 2026-11-02)
+Leonxlnx_taste-skill 12af471f627f866411b4bd785b19646d3672784c
+pbakaus_impeccable 24aa2547f1d80e8d0edd767d9b76bc0bb65a3b6b
+emilkowalski_skill f1090bec277140d02ed202440185ad9d02ac1490
+nextlevelbuilder_ui-ux-pro-max-skill 3a13158ff1f32156cbe144108de48eda2ecaed9a
+microsoft_playwright-cli c2d8d199459d1480491bebf0a6b3587136b673fa
+motiondivision_ai-kit 1e424943582cbbdb6e3f410687e39f96451447bb
+animejs docs https://animejs.com/documentation (v4.5.0, repo 01b81be1df6843ccfe0a71c0699a746bf740dd77)

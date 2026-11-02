@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "motion": {
+      "type": "http",
+      "url": "https://mcp.motion.dev"
+    },
+    "hostinger": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "hostinger-api-mcp@3.24.1"],
+      "env": {
+        "HOSTINGER_API_TOKEN": "${HOSTINGER_API_TOKEN}"
+      }
+    }
+  }
+}

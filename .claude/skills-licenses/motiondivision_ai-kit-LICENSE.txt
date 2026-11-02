@@ -1,0 +1,1 @@
+motion skill (github.com/motiondivision/ai-kit): MIT License, según packages/motion-ai/package.json y https://motion.dev/docs/ai-kit-install. El repo no incluye archivo LICENSE.
